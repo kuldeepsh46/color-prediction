@@ -1,0 +1,82 @@
+.toggle-active:active {
+  transform: scale(0.96);
+}
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.carousel-container {
+  background-size: contain;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-image: url("https://vvs.autosyncstudio.com/static/backgrounds/builder-line-desktop.svg");
+  position: relative;
+
+  animation: autosync-carousel-fade-in-image;
+  animation-delay: 0.3s;
+  animation-duration: 0.3s;
+  animation-fill-mode: forwards;
+  -webkit-animation: autosync-carousel-fade-in-image;
+  -webkit-animation-delay: 0.3s;
+  -webkit-animation-duration: 0.3s;
+  -webkit-animation-fill-mode: forwards;
+  display: none;
+  opacity: 0;
+}
+.item-view-selected {
+  opacity: 1;
+  width: 50%;
+}
+.item-view-unselected {
+  opacity: 0.75;
+  width: 25%;
+}
+.item-view-selected,
+.item-view-unselected {
+  cursor: pointer;
+  transition: 0.3s;
+  font-size: 0.6rem;
+}
+
+.carousel-arrow-controller.previous {
+  left: 0;
+}
+.carousel-arrow-controller.next {
+  right: 0;
+}
+
+.carousel-arrow-option {
+  color: #00000080;
+  font-size: 1.803rem;
+}
+.carousel-arrow-option:hover {
+  color: #0000009c;
+}
+
+@media (max-width: 600px) {
+  .item-view-selected {
+    opacity: 1;
+    width: 100%;
+  }
+  .item-view-unselected {
+    opacity: 0;
+    width: 0%;
+  }
+}
+
+@keyframes autosync-carousel-fade-in-image {
+  from {
+    display: none;
+    opacity: 0;
+  }
+  to {
+    display: block;
+    opacity: 1;
+  }
+}

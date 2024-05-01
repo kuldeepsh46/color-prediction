@@ -1,0 +1,12 @@
+{
+    "/js/app.js": "/js/app.js?id=f488d5765a2c8eba52764a5867d097e1",
+    "/js/carousel.js": "/js/carousel.js?id=1900fd448b00ef169a60ec102a4334f8",
+    "/js/svelte.js": "/js/svelte.js?id=8e232cfe1499d8d2e1e7384bdf70b911",
+    "/css/app.css": "/css/app.css?id=3df7541dc1034517bb3fead827a52d27",
+    "/js/canvas_core.js": "/js/canvas_core.js?id=e33682dff0d81735914fa633e39762e0",
+    "/js/canvas_editor.js": "/js/canvas_editor.js?id=1669113878b52393d812378dcb8c915f",
+    "/js/echarts.min.js": "/js/echarts.min.js?id=334048d78468e534f58fb99cf2234643",
+    "/js/sortable.min.js": "/js/sortable.min.js?id=bfe1739af2fe32218ca13008cec294a6",
+    "/js/draggable.js": "/js/draggable.js?id=d18849fc91feebed0880f39597f2274c",
+    "/js/select2.js": "/js/select2.js?id=7c98b05dd4f3d7c693eb34690737f0d8"
+}
