@@ -10,6 +10,7 @@ use App\Http\Controllers\SupportController;
 use App\Http\Controllers\AdsController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\ColorPrediction;
+use App\Http\Controllers\RouletController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -184,4 +185,13 @@ Route::group(['middleware' => ['isUser']], function () {
     //color prediction game routes
     Route::get('/color-prediction', [ColorPrediction::class, "showColors"]);
     Route::post('/getGameResults', [ColorPrediction::class, "getGameResult"]);
+    Route::post('/betNow', [ColorPrediction::class, "betNow"]);
+    Route::post('/getWiningColor', [ColorPrediction::class, "getWinningColor"]);
+    Route::post('/gameOver/colorPrediction', [ColorPrediction::class, "gameOver"]);
+    
+    //roulet game routes
+    Route::get('/roulet', [RouletController::class, "showRoulet"]);
+    Route::post('/roulet-bet-now', [RouletController::class, "betNow"]);
+    Route::post('/roulet-get-result', [RouletController::class, "getResult"]);
+    Route::post('/roulet-game-over', [RouletController::class, "gameOver"]);
 });
