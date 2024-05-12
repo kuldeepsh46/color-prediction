@@ -29,12 +29,13 @@ class Gamesetting extends Controller
     }
     public function new_game_generated(Request $r)
     {
+        $gameType = $r->gameType;
         $new = Setting::where('category', 'game_status')->update(['value' => '0']);
         $r->session()->put('gamegenerate','1');
         //for getting current bets
         $getGameStatus= Setting::where('category', 'game_status')->get();
         $getGameStatus = json_decode(json_encode ( $getGameStatus ) , true);
-            $allbets = Userbit::where("gameid", currentid())->join ('users','users.id','=','userbits.userid')->get();
+            $allbets = Userbit::where("gameid", currentid(0))->join ('users','users.id','=','userbits.userid')->get();
             $currentGameBet = $allbets;
             if($getGameStatus[0]['value'] == 1) {
                     $min_bet = setting('bot_min_bet');
@@ -59,24 +60,24 @@ class Gamesetting extends Controller
             );
                 }
             }
-            $currentGame = array("id"=>currentid());
+            $currentGame = array("id"=>currentid(0));
             $currentGameBetCount = count($currentGameBet);
             $currentBetResponse = array("currentGame" => $currentGame, "currentGameBet" => $currentGameBet, "currentGameBetCount" => $currentGameBetCount, "currentGameStatus" => $getGameStatus);
-            return response()->json(array("id" => currentid(), "currentBetResponse" => $currentBetResponse));
+            return response()->json(array("id" => currentid($gameType), "currentBetResponse" => $currentBetResponse));
     }
     public function increamentor(Request $r)
     {
         $gamestatusdata = Setting::where('category', 'game_status')->first();
         $res = 0;
         if($gamestatusdata) {
-            $totalbet   = Userbit::where('gameid',currentid())->count();
+            $totalbet   = Userbit::where('gameid',currentid(0))->count();
             
             $totalBusi = Userbit::where('status', 1)->where('created_at', '>=', now()->subMinutes(15))->sum('amount');
             $totalDist = Userbit::where('status', 1)->where('created_at', '>=', now()->subMinutes(15))->sum('give_amount');
             
             $total_busi = Userbit::where('status', 1)->where('created_at', '>=', Carbon::today()->toDateString())->sum('amount');
             $total_dist = Userbit::where('status', 1)->where('created_at', '>=', Carbon::today()->toDateString())->sum('give_amount');
-            $new_bet    = Userbit::where('gameid',currentid())->where('status', 0)->where('created_at', '>=', Carbon::today()->toDateString())->sum('amount');
+            $new_bet    = Userbit::where('gameid',currentid(0))->where('status', 0)->where('created_at', '>=', Carbon::today()->toDateString())->sum('amount');
             $net_dis = $totalBusi-$totalDist;
             $max = setting('max_distribution')/100;
             $incSpeed = Setting::where('category', 'inc_speed')->get();
@@ -103,8 +104,8 @@ class Gamesetting extends Controller
     public function increamentor121212(Request $r)
     {
         // return 1.7;
-        $totalbet = Userbit::where('gameid',currentid())->count();
-        $totalamount = Userbit::where('gameid',currentid())->sum('amount');
+        $totalbet = Userbit::where('gameid',currentid(0))->count();
+        $totalamount = Userbit::where('gameid',currentid(0))->sum('amount');
         if ($totalbet == 0) {
             return rand(8,11);
         }else{
@@ -121,27 +122,30 @@ class Gamesetting extends Controller
     
     public function game_over(Request $r)
     {
-        
+        $gameType = $r->gameType;
         $r->session()->forget('result');
-        $result = Gameresult::where('id', currentid())->update([
+        $result = Gameresult::where('id', currentid(0))->update([
             "result" => number_format($r->last_time, 2),
         ]);
-        $alluserbit = Userbit::where('gameid', currentid())->where('status', 0)->get();
+        $alluserbit = Userbit::where('gameid', currentid($gameType))->where('status', 0)->get();
         foreach ($alluserbit as $key) {
-			if(floatval($r->last_time) <= 1.20){
-			$result = 0;
-		    }else{
-			$result = $r->last_time;
-			}
-            $finalamount = floatval($key->amount) * floatval($result);
+            if($gameType == 0) {
+                if(floatval($r->last_time) <= 1.20){
+    			$result = 0;
+    		    }else{
+    			$result = $r->last_time;
+    			}
+                $finalamount = floatval($key->amount) * floatval($result);
+                Userbit::where('id', $key->id)->update(["status"=> 1]);
+            }
             Userbit::where('id', $key->id)->update(["status"=> 1]);
-            // addwallet($key->userid,$finalamount);
         }
         $new = Setting::where('category', 'game_status')->update(['value' => '0']);
         Setting::where('category', 'game_status')->update(["incNo"  => 0]);
         $r->session()->put('gamegenerate','0');
         $result = new Gameresult;
         $result->result = "pending";
+        $result->gameType = $gameType;
         $result->save();
         $walletAmt = wallet(user('id'), 'num');
         $walletAmt = (float)str_replace([',', '.'], ['', '.'], $walletAmt);
@@ -160,7 +164,7 @@ class Gamesetting extends Controller
         $result->userid = user('id');
         $result->amount = $r->all_bets[$i]['bet_amount'];
         $result->type = $r->all_bets[$i]['bet_type'];
-        $result->gameid = currentid();
+        $result->gameid = currentid(0);
         $result->give_amount = 0;
         $result->section_no = $r->all_bets[$i]['section_no'];
         // $totalBal = 
@@ -175,7 +179,7 @@ class Gamesetting extends Controller
                     "bet_id" => $result->id,
                 ]);
 				/*array_push($returnbets, [
-                    "bet_id" => currentid(),
+                    "bet_id" => currentid(0),
                 ]);*/
                 if($r->all_bets[$i]['bet_amount'] < wallet(user('id'), 'num')) {
                     addwallet(user('id'), floatval($r->all_bets[$i]['bet_amount']), "-");
@@ -210,32 +214,17 @@ class Gamesetting extends Controller
         $userid = user('id');
         $getGameStatus= Setting::where('category', 'game_status')->get();
         $getGameStatus = json_decode(json_encode ( $getGameStatus ) , true);
-            $allbets = Userbit::where("gameid", currentid())->where('userbits.status', '!=', 2)->where('userid', $userid)->join ('users','users.id','=','userbits.userid')->get();
+            $allbets = Userbit::where("gameid", currentid(0))->where('userbits.status', '!=', 2)->where('userid', $userid)->join ('users','users.id','=','userbits.userid')->get();
             $currentGameBet = $allbets;
-            // if($getGameStatus[0]['value'] == 1) {
-            //         $min_bet = setting('bot_min_bet');
-            //         $max_bet = setting('bot_max_bet');
-            //         $min_amount = setting('bot_min_amount');
-            //         $max_amount = setting('max_bet_amount');
-            //         for ($i=0; $i <rand($min_bet, $max_bet); $i++) {
-            //             $currentGameBet[]=array(
-            //                 "userid" => rand(10000,50000),
-            //                 "amount" => rand($min_amount,$max_amount),
-            // 				"image"  => "/images/avtar/av-".rand(1,72).".png",
-            // 				"cashout_multiplier" => number_format(rand(100, 200) / 100, 2)
-            //             );
-            //     }
-            // }
-            $currentGame = array("id"=>currentid());
+            $currentGame = array("id"=>currentid(0));
             $currentGameBetCount = count($currentGameBet);
             $response = array("currentGame" => $currentGame, "currentGameBet" => $currentGameBet, "currentGameBetCount" => $currentGameBetCount, "currentGameStatus" => $getGameStatus);
             return response()->json($response);
-        // }
     }
     public function currentlybetnew()
     {
         $userid = user('id');
-        $allbets = Userbit::where("gameid", currentid())->where('userbits.status', '!=', 2)->where('userid', $userid)->join ('users','users.id','=','userbits.userid')->get();
+        $allbets = Userbit::where("gameid", currentid(0))->where('userbits.status', '!=', 2)->where('userid', $userid)->join ('users','users.id','=','userbits.userid')->get();
         $currentGameBet = $allbets;
         $min_bet = setting('bot_min_bet');
         $max_bet = setting('bot_max_bet');
@@ -252,17 +241,12 @@ class Gamesetting extends Controller
 				"cashOutAmount" => round($amount * $cashOutMultiplier),
             );
         }
-        // $currentGameBet = $currentGameBet->sortByDesc('amount');
-        // $sortedGameBet = [];
-        // foreach($currentGameBet as $currentBet) {
-        //         $sortedGameBet[] = $currentBet;
-        // }
         $currentUserBetId = 0;
         $currentUserId = json_decode(json_encode ( $allbets ) , true);
         if(array_key_exists('id', $currentUserId[0])) {
             $currentUserBetId = $currentUserId[0]['id'];
         }
-        $currentGame = array("id"=>currentid());
+        $currentGame = array("id"=>currentid(0));
         $currentGameBetCount = count($currentGameBet);
          $response = array("currentGame" => $currentGame, "currentGameBet" => $currentGameBet, "currentGameBetCount" => $currentGameBetCount, "currentUserId" => $currentUserBetId);
         return response()->json($response);
@@ -287,7 +271,7 @@ class Gamesetting extends Controller
 			$result = 0;
 		}
 		$cash_out_amount = floatval($betAmt)*floatval($result);
-		addwallet(user('id'),$cash_out_amount); 
+		addwallet(user('id'),$cash_out_amount);
 		$walletAmt = wallet(user('id'), 'num');
         $walletAmt = (float)str_replace([',', '.'], ['', '.'], $walletAmt);
         $bonusAmt = getBonusAmt(user('id'));
@@ -369,7 +353,7 @@ class Gamesetting extends Controller
 	   // dd($r->gameId);
 	   $userid = user('id');
 	   $gameId = $r->gameId;
-	   $allUsers = Userbit::where('gameid', currentid())->where('userid', $userid)->update([
+	   $allUsers = Userbit::where('gameid', currentid(0))->where('userid', $userid)->update([
 	       'status' => 2,
 	       ]);
 	   if($allUsers) {

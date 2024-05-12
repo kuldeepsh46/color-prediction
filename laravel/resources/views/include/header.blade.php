@@ -207,7 +207,7 @@ $totalAmt = $walletAmt + $bonusAmt;
                                     <a class=" avitot active" aria-current="page" href="/crash" ><img src="images/logo.svg" class="side_logo" style="width: 80px;"></a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="avitot" href="#" data-bs-toggle="modal" data-bs-target="#coming-modal"><img src="images/col_p.png" class="" style="width: 30px;"> Colour Prediction</a>
+                                    <a class=" avitot active" aria-current="page" href="/color-prediction" ><img src="images/col_p.png" class="" style="width: 30px;"> Colour Prediction</a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="avitot" href="#" data-bs-toggle="modal" data-bs-target="#coming-modal"><img src="images/roulet.png" class="" style="width: 30px;"> Roulet</a>

@@ -2350,7 +2350,7 @@
 
         var max_bet_amount = parseFloat('{{ setting('max_bet_amount') }}');
 
-        var current_game_data = {{ currentid() }};
+        var current_game_data = {{ currentid(0) }};
 
     </script>
 
