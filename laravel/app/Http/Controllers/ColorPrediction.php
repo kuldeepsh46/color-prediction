@@ -15,7 +15,7 @@ class ColorPrediction extends Controller
         return view('colorPrediction.index');
     }
     public function getGameResult() {
-        $gameResult = Userbit::where('userid', user('id'))->latest()->take(10)->get()->unique('gameid');
+        $gameResult = Userbit::where('type', 1)->where('userid', user('id'))->latest()->take(10)->get()->unique('gameid');
         return response()->json($gameResult);
     }
     public function betNow(Request $r) {
@@ -72,14 +72,14 @@ class ColorPrediction extends Controller
         $gameType = $r->gameType;
         $allBets = Userbit::where('status', 0)->groupBy('gameid', 'colorId')->selectRaw('gameid, colorId, SUM(amount) as totalBetAmt')->orderBy('totalBetAmt', 'asc')->get();
         $allBets = $allBets->toArray();
-        // dd($allBets);
         $data = array();
         $status = 0;
         $message = "Failed";
-        $userBetCount = Userbit::where('userid', user('id'))->where('gameid', currentid($gameType))->where('status', 0)->count();
-        // dd($userBetCount);
-        if($userBetCount) {
+        $userBetColorIdArray= array();
+        $winner = false;
+        $totalBetAmt = Userbit::where('status', 0)->where('gameid', currentid($gameType))->sum('amount');
             foreach($allBets as $key => $value) {
+                array_push($userBetColorIdArray, $value['colorId']);
                 $multiplier = 1;
                 if ($value['colorId'] >= 3 && $value['colorId'] <= 12) {
                     $multiplier = 10;
@@ -91,6 +91,7 @@ class ColorPrediction extends Controller
                 $giveAmt = $value['totalBetAmt'] * $multiplier;
                 $allBets[$key]['giveAmt'] = $giveAmt;
             }
+            // dd($userBets);
             $minGiveAmt = PHP_INT_MAX;
             $minIndex = -1;
             foreach ($allBets as $index => $item) {
@@ -100,22 +101,27 @@ class ColorPrediction extends Controller
                 }
             }
             $data = $allBets[$minIndex];
-            Userbit::where('gameid', currentid($gameType))->where('colorId', $data['colorId'])->update([
+            if(count($allBets) < 2 || (count($allBets) > 1 && $totalBetAmt < $data['giveAmt'])) {
+                $data['giveAmt'] = 0;
+                do {
+                    $randomNumber = mt_rand(0, 12);
+                } while (in_array($randomNumber, $userBetColorIdArray));
+                $data['colorId'] = $randomNumber;
+            } else {
+                $dataUpdated = Userbit::where('gameid', currentid($gameType))->where('colorId', $data['colorId'])->update([
                 'give_amount' => $data['give_amount']
             ]);
-        } else {
-            $data=array(
-                "gameid" => currentid(1),
-                "give_amount" => rand(1000, 10000),
-				"colorId" => rand(0,12),
-            );
-        }
+            }
+    //     }
             if($data) {
+                if (in_array($data['colorId'], $userBetColorIdArray)) {
+                    $winner = true;
+                    $cash_out_amount = $data['giveAmt'];
+                    addwallet(user('id'), $cash_out_amount);
+                }
+                $data['winner'] = $winner;
                 $status = 1;
                 $message = "Success";
-                Userbit::where('gameid', currentid($gameType))->update([
-                'status' => 1,
-            ]);
             }
         $response = array("isSuccess" => $status, "data" => $data, "message" => $message);
         return response()->json($response);
@@ -127,7 +133,14 @@ class ColorPrediction extends Controller
            'status' => 1 
         ]);
         if($gameStatusUpdated) {
+            $result = new Gameresult;
+            Gameresult::where('id', $gameId)->where('gameType', $gameType)->update([
+                'result' => 1
+            ]);
             $response = array("isSuccess" => 'True', "message" => "Success");
+            $result->result = "pending";
+            $result->gameType = $gameType;
+            $result->save();
         } else {
             $response = array("isSuccess" => 'False', "message" => "Failed");
         }
