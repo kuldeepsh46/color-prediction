@@ -138,14 +138,12 @@ class RouletController extends Controller
         $gameStatusUpdated = Userbit::where('gameid', $gameId)->update([
            'status' => 1 
         ]);
-        
         if($gameStatusUpdated) {
             $result = new Gameresult;
             Gameresult::where('id', $gameId)->where('gameType', $gameType)->update([
-                'result' => 5
+                'result' => 1
             ]);
             $response = array("isSuccess" => 'True', "message" => "Success");
-            
             $result->result = "pending";
             $result->gameType = $gameType;
             $result->save();
